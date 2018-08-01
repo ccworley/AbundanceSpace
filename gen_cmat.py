@@ -1,20 +1,33 @@
 #Plot Abundance data
-from load_data import *
 from math import *
 import numpy as np
 from astropy.table import Table, Column
+from load_data import *
 
 import matplotlib.pyplot as plt
+
 label_size = 6
 plt.rcParams['xtick.labelsize'] = label_size 
 plt.rcParams['ytick.labelsize'] = label_size 
 
 lab = len(idr4abuncol)
 
+samplefrom = 1   #0=GESFLD, 1=GESTYPE
+
+if samplefrom == 0:
+    chkgestext = 'NGC1851'
+    idr4sampvect = idr4gesfld
+elif samplefrom == 1:    
+    chkgestext = 'GE_MW_BL'   
+    idr4sampvect = idr4gestyp
+    
+chkwg = 'WG11'
+chkrel = 'iDR4'
+
 #Extract GE_MW stars  (also look at GE_SD_GGC and GE_MW_BL
-blin = (idr4gesfld == 'NGC1851') & (idr4recwg == 'WG11')
+blin = (idr4sampvect == chkgestext) & (idr4recwg == chkwg)
 #blin = (idr4gestyp == 'GE_MW') & (idr4recwg == 'WG11')
-imat = np.where(blin==True)
+imat = np.where(np.logical_and(idr4sampvect == chkgestext,idr4recwg == chkwg))             #blin==True)
 #imat = imat1[imat2]
 spgf = idr4gestyp[imat]
 lspe = len(spgf)
@@ -23,17 +36,20 @@ lspe = len(spgf)
 abcolkp = []
 for i in range(0,lab):
 #for i in range(0,0):
-
-	abvect = idr4data.field(idr4abuncol[i])
-	mwabvect = abvect[imat]
-	inan = np.where(np.isfinite(mwabvect)==False)
-	ireal = np.where(np.isfinite(mwabvect)==True)
+    #print idr4abuncol[i]
+    abvect = idr4data.field(idr4abuncol[i])  # finds the right field based on COLNAME not on index - so is okay
+    #print abvect[0]
+    #abvect = idr4data[idr4abuncol[i]]
+    #print abvect[0]
+    mwabvect = abvect[imat]
+    inan = np.where(np.isfinite(mwabvect)==False)
+    ireal = np.where(np.isfinite(mwabvect)==True)
 	#imat = np.where(idr4gesfld == 'NGC1851')
 
-	lnan = len(mwabvect[inan])
-	lvect = len(mwabvect)
-	if lnan != lvect:  #there are values in vector so keep
-		abcolkp.append(idr4abuncol[i])
+    lnan = len(mwabvect[inan])
+    lvect = len(mwabvect)
+    if lnan != lvect:  #there are values in vector so keep
+        abcolkp.append(idr4abuncol[i])
 
 #Number of abundance columns with values
 labkp = len(abcolkp)
@@ -46,7 +62,7 @@ mnabmat = np.zeros((labkp))
 sdabmat = np.zeros((labkp))
 
 for i in range(0,labkp):
-	iss = np.where(idr4abcol==abcolkp[i])
+	iss = idr4abcol.index(abcolkp[i])
 	ssab = idr4abscc[iss]
 
 	abvect = idr4data.field(abcolkp[i])-idr4data.field('FEH')-ssab
@@ -65,21 +81,21 @@ for i in range(0,labkp):
 	sdabmat[i] = np.std(rmwabvect)
 
 #-------------------------------------
-##Create Abudnaces FITS table
-##defined columns -> abundances
-#cna = idr4cname[imat]
-#coln = fits.Column(name='CNAME', format='20A', array=cna)
-#colist = []
-#colist.append(coln)
+#Create Abudnaces FITS table
+#defined columns -> abundances
+cna = idr4cname[imat]
+coln = fits.Column(name='CNAME', format='20A', array=cna)
+colist = []
+colist.append(coln)
 
-#for i in range(0,len(mnabmat)):
-#	a = abmat[i,:]
-#	cola = fits.Column(name=abcolkp[i], format='E', array=a)
-#	colist.append(cola)
+for i in range(0,len(mnabmat)):
+	a = abmat[i,:]
+	cola = fits.Column(name=abcolkp[i], format='E', array=a)
+	colist.append(cola)
 
-#cols = fits.ColDefs(colist)
-#tbhdu = fits.BinTableHDU.from_columns(cols)
-#tbhdu.writeto('GES_NGC1851_Abundances.fits')
+cols = fits.ColDefs(colist)
+tbhdu = fits.BinTableHDU.from_columns(cols)
+tbhdu.writeto('../Tables/GES_'+chkrel+'_'+chkwg+'_'+chkgestext+'_Abundances.fits')
 #-------------------------------------
 
 #-------------------------------------
@@ -127,26 +143,28 @@ for i in range(0,len(mnabmat)):
 		ndcovmat[i,j] = np.divide(nele,nval)
 
 
-#-------------------------------------
-##Create FITS table
-##defined columns -> abundances
-#coln = fits.Column(name='Element', format='20A', array=abcolkp)
+##-------------------------------------
+#Create FITS table
+#defined columns -> abundances
+coln = fits.Column(name='Element', format='20A', array=abcolkp)
 
-#colist = []
-#colist.append(coln)
-#for i in range(0,len(mnabmat)):
-#	a = ndcovmat[i,:]
-#	cola = fits.Column(name=abcolkp[i], format='E', array=a)
-#	colist.append(cola)
+colist = []
+colist.append(coln)
+for i in range(0,len(mnabmat)):
+	a = ndcovmat[i,:]
+	cola = fits.Column(name=abcolkp[i], format='E', array=a)
+	colist.append(cola)
 
-#cols = fits.ColDefs(colist)
-#tbhdu = fits.BinTableHDU.from_columns(cols)
-#tbhdu.writeto('GES_MW_WG11_NormAbundCov.fits')
+cols = fits.ColDefs(colist)
+tbhdu = fits.BinTableHDU.from_columns(cols)
+tbhdu.writeto('../Tables/GES_'+chkrel+'_'+chkwg+'_'+chkgestext+'_NormAbundCov.fits')
 
 #abcolkp.append(ndcovmat)
 #data = Table([abcolkp, ndcovmat], names=['Element', abcolkp])
 #np.ascii.write(data, 'data_new.txt')
-#-------------------------------------
+##-------------------------------------
+#
+
 corlim = 0.75
 elevect = np.linspace(1,len(mnabmat),len(mnabmat))
 
@@ -182,6 +200,6 @@ for j in range(0,len(mnabmat)):
 
 	plt.show()
 
-plt.savefig('Figures/elementsbynormcovariance.pdf')
+plt.savefig('../Figures/GES_'+chkrel+'_'+chkwg+'_'+chkgestext+'_NormCov.pdf')
 		#plt.close() 
 

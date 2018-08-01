@@ -3,7 +3,8 @@ from astropy.io import fits
 import fnmatch
 
 #Load iDR4 FFFT Columns to get abundance fields
-idr4colfile = open('/home/cclare/GES/iDR5/FFFT/GESiDR5_FFFT/IDL/GES_iDR5_WGYY_FFFT_ColumnsDefinition.txt')
+idr4colfile = open('/Users/charlotteworley/Documents/GES/iDR4/GES_iDR5_WGYY_FFFT_ColumnsDefinition.txt')
+#idr4colfile = open('/home/cclare/GES/iDR5/FFFT/GESiDR5_FFFT/IDL/GES_iDR5_WGYY_FFFT_ColumnsDefinition.txt')
 idr4coldata = np.loadtxt(idr4colfile, dtype={'names': ('keywrd', 'keywrdcomment','datatype','datacomment','units','unitscomment'),'formats': ('S50','S50','S50','S50','S50','S50')},delimiter=';')
 idr4kywrd = idr4coldata['keywrd']
 idr4kywrdcmt = idr4coldata['keywrdcomment']
@@ -15,7 +16,8 @@ idr4duntscmt = idr4coldata['unitscomment']
 idr4abuncol = idr4kywrd[np.where(np.char.find(idr4kywrdcmt,'Abundance') > -1)]
 
 #Load iDR4 recommended
-idr4rec = '/home/cclare/GES/Repository/Dropbox/iDR4/GES_iDR4_WG15_Recommended.fits'
+idr4rec = '/Users/charlotteworley/Documents/GES/iDR4/GES_iDR4_WG15_Recommended.fits'
+#idr4rec = '/home/cclare/GES/Repository/Dropbox/iDR4/GES_iDR4_WG15_Recommended.fits'
 hdulist = fits.open(idr4rec)
 
 #header
@@ -76,10 +78,22 @@ idr4eeu2 = idr4data.field('E_EU2')
 idr4limeu2 = idr4data.field('UPPER_EU2')
 
 
-#Read in Solar Chemical Composition
-solf = open('Inputs/Abund_SolChemComp_iDR4.txt')
-soldata = np.loadtxt(solf, dtype={'names': ('solcol', 'solz','solabscc'),'formats': ('S4', 'I2','f6')})
-idr4abcol = soldata['solcol']
-idr4abz = soldata['solz']
-idr4abscc = soldata['solabscc']
+##Read in Solar Chemical Composition
+#solf = open('Inputs/Abund_SolChemComp_iDR4.txt')
+#soldata = np.loadtxt(solf, dtype={'names': ('solcol', 'solz','solabscc'),'formats': ('S4, i2, f6')})
+#idr4abcol = soldata['solcol']
+#idr4abz = soldata['solz']
+#idr4abscc = soldata['solabscc']
+
+limfile = "Inputs/Abund_SolChemComp_iDR4.txt"
+idr4abcol = []
+idr4abz = []
+idr4abscc = []
+with open(limfile, "rt") as in_file:
+    for line in in_file:
+        linevect = line.split()
+        #print linevect
+        idr4abcol.append(linevect[0])
+        idr4abz.append(float(linevect[1]))
+        idr4abscc.append(float(linevect[2]))
 
